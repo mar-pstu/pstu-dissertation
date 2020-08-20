@@ -1,0 +1,122 @@
+
+.form-group {
+	margin-top: 1em;
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: center;
+}
+
+.form-group + .form-group {
+	border-top: 1px solid #ccd0d4;
+	padding-top: 1em;
+}
+
+.form-group .form-label {
+	flex-shrink: 0;
+	font-weight: bold;
+	margin-right: .5em;
+	width: 30%;
+	font-size: 85%;
+}
+
+.form-group .form-control {
+	flex-grow: 1;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+
+/**/
+
+
+.list-of-templates {
+	width: 100%;
+}
+
+.list-of-templates .list {
+	counter-reset: templatescount;
+}
+
+.list-of-templates .list-item {
+	counter-increment: templatescount;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+.list-of-templates .list-item + .list-item {
+	border-top: 1px solid #ccd0d4;
+	padding-top: .2em;
+	margin-top: .2em;
+}
+
+.list-of-templates .list-item::before {
+	content: counter( templatescount );
+	font-weight: bold;
+	min-width: 2em;
+	text-align: center;
+}
+
+.list-of-templates .add-button {
+	margin-top: .5em;
+}
+
+.list-of-templates .template {
+	flex-grow: 2;
+	padding-left: .2em;
+	padding-right: .2em;
+	box-sizing: border-box;
+}
+
+.list-of-templates .form-control {
+	margin-top: .2em;
+	margin-bottom: .2em;
+}
+
+.list-of-templates .wp-picker-holder {
+	position: absolute;
+}
+
+.list-of-templates .wp-picker-container .wp-color-result.button {
+	margin: 0;
+}
+
+.list-of-templates .wp-picker-container .wp-picker-clear {
+	padding: 2px 8px;
+}
+
+/**/
+
+
+.file-choice-field {
+	display: flex;
+	width: 100%;
+	flex-direction: row;
+	align-items: center;
+}
+
+.file-choice-field .file-choice-button {
+	flex-shrink: 0;
+}
+
+.file-choice-field .file-choice-control {
+	flex-grow: 2;
+	margin-right: .2em;
+}
+
+
+/**/
+
+
+.composite-field {
+	width: 100%;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+.composite-field > * {
+	flex-grow: 1;
+	width: auto !important;
+}
