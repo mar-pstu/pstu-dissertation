@@ -87,6 +87,12 @@ class Manager {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-taxonomy-science_counsil.php';
 
 		/**
+		 * Классы отвечающие за функционал публичной части сайта
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-part-public-post_type-dissertation.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-part-public-taxonomy-science_counsil.php';
+
+		/**
 		 * Класс, отвечающий за регистрацию хуков, фильтров и шорткодов.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-loader.php';
@@ -165,7 +171,16 @@ class Manager {
 	 */
 	private function define_public_hooks() {
 		
-		// пока ничего не запускаем
+		$class_post_type_dissertation = new PartPublicPostTypeDessertation( $this->get_plugin_name(), $this->get_version() );
+		$this->loader->add_filter( 'the_content', $class_post_type_dissertation, 'single_content', 10, 1 );
+		$this->loader->add_shortcode( $class_post_type_dissertation->get_post_type_name() . '_' . 'author', $class_post_type_dissertation, 'shortode_manager', 10, 3 );
+		$this->loader->add_shortcode( $class_post_type_dissertation->get_post_type_name() . '_' . 'publication', $class_post_type_dissertation, 'shortode_manager', 10, 3 );
+		$this->loader->add_shortcode( $class_post_type_dissertation->get_post_type_name() . '_' . 'protection', $class_post_type_dissertation, 'shortode_manager', 10, 3 );
+		$this->loader->add_shortcode( $class_post_type_dissertation->get_post_type_name() . '_' . 'protection_time', $class_post_type_dissertation, 'shortode_manager', 10, 3 );
+		$this->loader->add_shortcode( $class_post_type_dissertation->get_post_type_name() . '_' . 'file', $class_post_type_dissertation, 'shortode_manager', 10, 3 );
+		$this->loader->add_shortcode( $class_post_type_dissertation->get_post_type_name() . '_' . 'abstract', $class_post_type_dissertation, 'shortode_manager', 10, 3 );
+		$this->loader->add_shortcode( $class_post_type_dissertation->get_post_type_name() . '_' . 'opponents', $class_post_type_dissertation, 'shortode_manager', 10, 3 );
+		
 
 	}
 

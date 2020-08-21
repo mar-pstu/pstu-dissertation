@@ -104,11 +104,13 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 					'sanitize_text_field',
 					'sanitize_text_field',
 				], [
-					'last_name', 'first_name'
+					'last_name', 'first_name', 'middle_name'
+				], [
+					'last_name', 'first_name', 'middle_name'
 				] );
 				break;
 			case 'opponents':
-				$result = ( is_array( $value ) && ! empty( $value ) ) ? array_diff( array_map( function ( $item ) {
+				$result = ( is_array( $value ) && ! empty( $value ) ) ? array_filter( array_map( function ( $item ) {
 					return $this->parse_only_allowed_args( [
 						'last_name'   => '',
 						'first_name'  => '',
@@ -124,9 +126,11 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 						'sanitize_text_field',
 						'esc_url_raw',
 					], [
-						'last_name', 'first_name'
+						'last_name', 'first_name', 'middle_name'
+					], [
+						'last_name', 'first_name', 'middle_name'
 					] );
-				} , $value ), [] ) : [];
+				} , $value ) ) : [];
 				break;
 			default:
 				$result = sanitize_text_field( $value );

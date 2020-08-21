@@ -264,9 +264,10 @@ trait Controls {
 	 * @param  array $args              неочищенные параметры
 	 * @param  array $sanitize_callback одномерный массив с именами функция, с помощью поторых нужно очистить параметры
 	 * @param  array $required          обязательные параметры
+	 * @param  array $not_empty         параметры которые не могут быть пустыми
 	 * @return array                    возвращает ощиченный массив разрешённых параметров
 	 */
-	public function parse_only_allowed_args( $default, $args, $sanitize_callback = [], $required = [] ) {
+	public function parse_only_allowed_args( $default, $args, $sanitize_callback = [], $required = [], $not_empty = [] ) {
 		$args = ( array ) $args;
 		$result = [];
 		$count = 0;
@@ -281,6 +282,9 @@ trait Controls {
 				return null;
 			} else {
 				$result[ $key ] = $value;
+			}
+			if ( empty( $result[ $key ] ) && in_array( $key, $not_empty ) ) {
+				return null;
 			}
 			$count = $count + 1;
 			next( $default );

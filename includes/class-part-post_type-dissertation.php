@@ -67,4 +67,7 @@ class PartPostTypeDessertation extends PostType {
 	}
 
 
+	
+
+
 }
