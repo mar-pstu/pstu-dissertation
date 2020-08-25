@@ -66,6 +66,21 @@ abstract class Part {
 
 
 	/**
+	 * Формирует текст MD
+	 * @param  string $file_path путь к текстовому файлу
+	 * @return string            html
+	 */
+	protected function get_parsedown_text( $file_path ) {
+		$result = '';
+		if ( file_exists( $file_path ) ) {
+			$class_parsedown = new \Parsedown();
+			$result = $class_parsedown->text( file_get_contents( $file_path ) );
+		}
+		return $result;
+	}
+
+
+	/**
 	 * Возвращает имя плагина используется для уникальной идентификации его в контексте
 	 * WordPress и для определения функциональности интернационализации.
 	 * @since     2.0.0

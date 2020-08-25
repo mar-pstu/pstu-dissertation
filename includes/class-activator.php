@@ -29,7 +29,9 @@ class Activator {
 	 * @since    2.0.0
 	 */
 	public static function activate() {
-		// пока ничего не вносим
+		add_role( 'science_counsil_editor', __( 'Редактор научного совета', GETGEN_SRM_NAME ), array(
+			'read'  => true,
+		) );
 	}
 
 }

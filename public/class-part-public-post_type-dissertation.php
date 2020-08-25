@@ -28,7 +28,7 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 	 * @param  string $content содержимое записи
 	 * @return string          обработанное содержимое записи
 	 */
-	public function single_content( string $content ) {
+	public function filter_single_content( $content = '' ) {
 		if ( get_post_type( get_the_ID() ) == $this->post_type_name ) {
 			$path = $this->get_template_file_path( "single-content-{$this->post_type_name}.php" );
 			if ( $path ) {
@@ -39,6 +39,21 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 			}
 		}
 		return $content;
+	}
+
+
+	/**
+	 * Формирует html-код с информацией о конкурсной работе
+	 * @param  string  $title  заголовок
+	 * @param  int     $id     идентификатор поста
+	 * @return string          заголовок
+	 */
+	public function filter_title( $title, $post_id = null ) {
+		$author = self::render_author( $post_id );
+		if ( ! empty( $author ) ) {
+			$title = $author . ' - ' . $title;
+		}
+		return $title;
 	}
 
 
@@ -90,7 +105,7 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 	public function shortode_manager( $atts = [], $content = '', $shortcode_name = null ) {
 		$html = $content;
 		if ( null != $shortcode_name ) {
-			$key = str_replace( $this->post_type_name . '_', '', $shortcode_name );
+			$key = str_replace( $this->part_name . '_', '', $shortcode_name );
 			$atts = shortcode_atts( [
 				'post_id' => get_the_ID(),
 				'empty'   => '-',
@@ -99,30 +114,16 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 			if ( $atts[ 'post_id' ] ) {
 				switch ( $key ) {
 					case 'author':
-						$meta = get_post_meta( $atts[ 'post_id' ], $key, true );
-						if ( is_array( $meta ) && ! empty( $meta ) ) {
-							$meta = array_merge( [
-								'last_name'   => '',
-								'first_name'  => '',
-								'middle_name' => '',
-							], $meta );
-							$html = sprintf(
-								'%1$s %2$s %3$s',
-								$meta[ 'last_name' ],
-								$meta[ 'first_name' ],
-								$meta[ 'middle_name' ]
-							);
-						}
+						$html = self::render_author( $atts[ 'post_id' ] );
 						break;
-					case 'file':
-						$html = $this->render_link( get_post_meta( $atts[ 'post_id' ], 'dissertation', true ), __( 'Скачать', $this->plugin_name ) );
+					case 'file_link':
+						$html = self::render_link( get_post_meta( $atts[ 'post_id' ], 'dissertation', true ), __( 'Скачать', $this->plugin_name ) );
 						break;
-					case 'abstract':
-						$html = $this->render_link( get_post_meta( $atts[ 'post_id' ], 'abstract', true ), __( 'Скачать', $this->plugin_name ) );
+					case 'abstract_link':
+						$html = self::render_link( get_post_meta( $atts[ 'post_id' ], 'abstract', true ), __( 'Скачать', $this->plugin_name ) );
 						break;
 					case 'opponents':
 						$meta = get_post_meta( $atts[ 'post_id' ], $key, true );
-						$this->var_dump( $meta );
 						if ( is_array( $meta ) && ! empty( $meta ) ) {
 							$html = '<ul>' . implode( "\r\n", array_map( function ( $item ) {
 								$item = array_merge( [
@@ -161,12 +162,35 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 	}
 
 
+	public static function render_author( $post_id = null ) {
+		$html = '';
+		if ( is_null( $post_id ) ) {
+			$post_id = get_the_ID();
+		}
+		$meta = get_post_meta( $post_id, 'author', true );
+		if ( is_array( $meta ) && ! empty( $meta ) ) {
+			$meta = array_merge( [
+				'last_name'   => '',
+				'first_name'  => '',
+				'middle_name' => '',
+			], $meta );
+			$html = trim( sprintf(
+				'%1$s %2$s %3$s',
+				$meta[ 'last_name' ],
+				$meta[ 'first_name' ],
+				$meta[ 'middle_name' ]
+			) );
+		}
+		return $html;
+	}
+
+
 	/**
 	 * Формирует html-код ссылки по переданному url
 	 * @param  string     $url    url
 	 * @return string             html-код
 	 */
-	public function render_link( $url, $label = '' ) {
+	public static function render_link( $url, $label = '' ) {
 		$html = '';
 		if ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
 			$html = sprintf(

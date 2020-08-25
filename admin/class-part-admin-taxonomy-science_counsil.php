@@ -61,7 +61,8 @@ class PartAdminTaxonomyScienceCounsil extends PartTaxonomyScienceCounsil {
 	/**
 	 * Сохранение записи типа "конкурсная работа"
 	 * @since    2.0.0
-	 * @var      int          $post_id
+	 * @param    int          $post_id
+	 * @param    WP_Post      $post
 	 */
 	public function save_post( $post_id, $post ) {
 		if ( ! isset( $_POST[ "{$this->part_name}_nonce" ] ) ) return;
@@ -112,6 +113,34 @@ class PartAdminTaxonomyScienceCounsil extends PartTaxonomyScienceCounsil {
 			$control = __( 'Заполните таксономию или обратитесь к администратору сайта.', $this->plugin_name );
 		}
 		include dirname( __FILE__ ) . '/partials/form-group.php';
+	}
+
+
+	/**
+	 * Регистрирует дополнительную колонку в таблице терпов
+	 * @since    2.0.0
+	 * @param    array        $columns    массив зарегистрированных еолонок
+	 * @return   array
+	 */
+	public function add_columns( $columns ) {
+		$columns[ "{$this->part_name}_term_id" ] = __( 'ID', $this->plugin_name );
+		return $columns;
+	}
+
+
+	/**
+	 * Формирует html код содержимого ячейки
+	 * @since    2.0.0
+	 * @param    string    $content      содержимое яцейки
+	 * @param    string    $column_name  идентификатор ячейки
+	 * @param    int       $term_id      идентификатор терма
+	 * @return   string
+	 */
+	public function render_custom_columns( $content, $column_name, $term_id ) {
+		if ( "{$this->part_name}_term_id" == $column_name ) {
+			$content = '<b><code>' . $term_id . '</code></b>';
+		}
+		return $content;
 	}
 
 

@@ -32,7 +32,7 @@ class Deactivator {
 	 * @since    2.0.0
 	 */
 	public static function deactivate() {
-		// пока ничего не делаем
+		remove_role( 'science_counsil_editor' );
 	}
 
 }
