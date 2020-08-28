@@ -24,14 +24,20 @@ namespace pstu_dissertation;
  */
 class Activator {
 
+
 	/**
 	 * Действия которые необходимо выполнить при активации
 	 * @since    2.0.0
 	 */
 	public static function activate() {
-		add_role( 'science_counsil_editor', __( 'Редактор научного совета', GETGEN_SRM_NAME ), array(
-			'read'  => true,
-		) );
+		add_role( 'science_counsil_editor', __( 'Редактор научного совета', PSTU_DISSERTATION_NAME ), [
+			'read'         => true,
+			'upload_files' => true,
+			'delete_posts' => true,
+			'delete_published_posts' => true,
+			'manage_media_library' => true,
+		] );
 	}
+
 
 }

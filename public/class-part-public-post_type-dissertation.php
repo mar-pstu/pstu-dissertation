@@ -49,9 +49,9 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 	 * @return string          заголовок
 	 */
 	public function filter_title( $title, $post_id = null ) {
-		$author = self::render_author( $post_id );
+		$author = self::render_person_full_name( get_post_meta( $post_id, 'author', true ) );
 		if ( ! empty( $author ) ) {
-			$title = $author . ' - ' . $title;
+			$title = sprintf( __( '%s (автор %s)', $this->plugin_name ), $title, $author );
 		}
 		return $title;
 	}
@@ -114,13 +114,13 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 			if ( $atts[ 'post_id' ] ) {
 				switch ( $key ) {
 					case 'author':
-						$html = self::render_author( $atts[ 'post_id' ] );
+						$html = self::render_person_full_name( get_post_meta( $atts[ 'post_id' ], $key, true ) );
 						break;
 					case 'file_link':
-						$html = self::render_link( get_post_meta( $atts[ 'post_id' ], 'dissertation', true ), __( 'Скачать', $this->plugin_name ) );
+						$html = self::render_link( get_post_meta( $atts[ 'post_id' ], 'dissertation', true ), __( 'Скачать', $this->plugin_name ), true );
 						break;
 					case 'abstract_link':
-						$html = self::render_link( get_post_meta( $atts[ 'post_id' ], 'abstract', true ), __( 'Скачать', $this->plugin_name ) );
+						$html = self::render_link( get_post_meta( $atts[ 'post_id' ], 'abstract', true ), __( 'Скачать', $this->plugin_name ), true );
 						break;
 					case 'opponents':
 						$meta = get_post_meta( $atts[ 'post_id' ], $key, true );
@@ -135,13 +135,11 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 									'opinion'     => '',
 								], $item );
 								return sprintf(
-									'<li><div><strong>%1$s %2$s %3$s</strong> <small>%4$s</small></div><div>%5$s</div></li>',
-									$item[ 'last_name' ],
-									$item[ 'first_name' ],
-									$item[ 'middle_name' ],
+									'<li><div><strong>%1$s</strong> <small>%2$s</small></div><div>%3$s</div><div><small>%4$s</small></div></li>',
+									self::render_person_full_name( $item ),
 									$item[ 'degree' ],
 									$item[ 'workplace' ],
-									( empty( $item[ 'opinion' ] ) ) ? '' : __( 'Отзыв', $this->plugin_name ) . ': ' . $this->render_link( $item[ 'opinion' ], __( 'Скачать', $this->plugin_name ) )
+									( empty( $item[ 'opinion' ] ) ) ? '' : __( 'Отзыв', $this->plugin_name ) . ': ' . $this->render_link( $item[ 'opinion' ], __( 'Скачать', $this->plugin_name ), true )
 								);
 							}, $meta ) ) . '</ul>';
 						}
@@ -162,26 +160,22 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 	}
 
 
-	public static function render_author( $post_id = null ) {
-		$html = '';
-		if ( is_null( $post_id ) ) {
-			$post_id = get_the_ID();
-		}
-		$meta = get_post_meta( $post_id, 'author', true );
-		if ( is_array( $meta ) && ! empty( $meta ) ) {
-			$meta = array_merge( [
+	public static function render_person_full_name( $info = [] ) {
+		$result = '';
+		if ( is_array( $info ) ) {
+			$info = array_merge( [
 				'last_name'   => '',
 				'first_name'  => '',
 				'middle_name' => '',
-			], $meta );
-			$html = trim( sprintf(
+			], $info );
+			$result = trim( sprintf(
 				'%1$s %2$s %3$s',
-				$meta[ 'last_name' ],
-				$meta[ 'first_name' ],
-				$meta[ 'middle_name' ]
+				$info[ 'last_name' ],
+				$info[ 'first_name' ],
+				$info[ 'middle_name' ]
 			) );
 		}
-		return $html;
+		return $result;
 	}
 
 
@@ -190,12 +184,13 @@ class PartPublicPostTypeDessertation extends PartPostTypeDessertation {
 	 * @param  string     $url    url
 	 * @return string             html-код
 	 */
-	public static function render_link( $url, $label = '' ) {
+	public static function render_link( $url, $label = '', $download = false ) {
 		$html = '';
 		if ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
 			$html = sprintf(
-				'<a href="%1$s">%2$s</a>',
+				'<a href="%1$s" %2$s>%3$s</a>',
 				esc_attr( $url ),
+				( $download ) ? 'download' : '',
 				( empty( $label ) ) ? $url : $label
 			);
 		}

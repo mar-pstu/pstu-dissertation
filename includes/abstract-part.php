@@ -81,6 +81,27 @@ abstract class Part {
 
 
 	/**
+	 * Проверяет ассоциативный ли массив
+	 * @param    array   $arr   массив для проверки
+	 * @return   bool           результат проверки
+	 */
+	public static function is_assoc_array( array $arr ) {
+		if (array() === $arr) return false;
+		return array_keys($arr) !== range(0, count($arr) - 1);
+	}
+
+
+	/**
+	 * Проверяет является ли сторока url адресом
+	 * @param    string   $string   исходная строка
+	 * @return   bool               результат проверки
+	 */
+	public static function is_url( $string ) {
+		return filter_var( $string, FILTER_VALIDATE_URL );
+	}
+
+
+	/**
 	 * Возвращает имя плагина используется для уникальной идентификации его в контексте
 	 * WordPress и для определения функциональности интернационализации.
 	 * @since     2.0.0

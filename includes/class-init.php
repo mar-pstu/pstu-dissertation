@@ -17,8 +17,13 @@ if ( ! defined( 'ABSPATH' ) ) {	exit; };
  */
 class Init extends Part {
 
+
+	/**
+	 * Привязывает указанные таксономии к типам постов.
+	 */
 	public function register_taxonomy_for_object_type() {
 		register_taxonomy_for_object_type( 'science_counsil', 'dissertation' );
 	}
-	
+
+
 }

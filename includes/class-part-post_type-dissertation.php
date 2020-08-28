@@ -57,7 +57,16 @@ class PartPostTypeDessertation extends PostType {
 			'show_in_menu'       => true,
 			'query_var'          => true,
 			'rewrite'            => true,
-			'capability_type'    => 'post',
+			'capability_type'    => $this->post_type_name,
+			'capabilities'       => [
+				'edit_published_posts'=> "edit_published_{$this->post_type_name}",
+				'publish_posts'       => "publish_{$this->post_type_name}",
+				'delete_published_posts' => "delete_published_{$this->post_type_name}",
+				'edit_posts'          => "edit_{$this->post_type_name}",
+				'delete_posts'        => "delete_{$this->post_type_name}",
+				'read_post'           => "read_{$this->post_type_name}",
+				'read_private_posts'  => "read_private_{$this->post_type_name}",
+			],
 			'has_archive'        => false,
 			'hierarchical'       => false,
 			'menu_icon'          => 'dashicons-book',
@@ -67,7 +76,38 @@ class PartPostTypeDessertation extends PostType {
 	}
 
 
-	
+	/**
+	 * Планируем функцию удаления старых диссертаций
+	 */
+	public function registration_deletion_of_old_posts() {
+		if ( ! wp_next_scheduled( "delete_old_{$this->post_type_name}" ) ) {
+			wp_schedule_event( time(), 'daily', "delete_old_{$this->post_type_name}" );
+		}
+	}
+
+
+	/**
+	 * Выполняем очистку старых диссертаций
+	 */
+	public function delete_old_posts_run() {
+		$entries = get_posts( [
+			'post_type'  => $this->post_type_name,
+			'meta_query' => [
+				'relation' => 'AND',
+				[
+					'key'     => 'delete_date',
+					'value'   => date( 'Y-m-d' ),
+					'compare' => '<=',
+					'type'    => 'DATE',
+				],
+			],
+		] );
+		if ( is_array( $entries ) && ! empty( $entries ) ) {
+			foreach ( $entries as $entry ) {
+				wp_delete_post( $entry->ID, false );
+			}
+		}
+	}
 
 
 }

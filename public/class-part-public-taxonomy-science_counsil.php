@@ -35,8 +35,8 @@ class PartPublicTaxonomyScienceCounsil extends PartTaxonomyScienceCounsil {
 		if ( null != $shortcode_name ) {
 			$key = str_replace( $this->part_name . '_', '', $shortcode_name );
 			$atts = shortcode_atts( [
-				'term_id' => get_the_ID(),
-				'empty'   => '-',
+				'term_id' => '',
+				'empty'   => 'e-',
 			], $atts, $shortcode_name );
 			$atts[ 'term_id' ] = sanitize_key( $atts[ 'term_id' ] );
 			if ( $atts[ 'term_id' ] ) {

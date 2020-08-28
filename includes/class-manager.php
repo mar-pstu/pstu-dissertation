@@ -75,9 +75,11 @@ class Manager {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/abstract-part.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/abstract-part-post_type.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/abstract-part-taxonomy.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/abstract-part-user_role.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-control.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-part-post_type-dissertation.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-part-taxonomy-science_counsil.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-part-user_role-science_counsil_editor.php';
 
 		/**
 		 * Классы отвечающие за функционал админки
@@ -88,12 +90,14 @@ class Manager {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-settings-manager.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-post_type-dissertation.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-taxonomy-science_counsil.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-user_role-science_counsil_editor.php';
 
 		/**
 		 * Классы отвечающие за функционал публичной части сайта
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-part-public-post_type-dissertation.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-part-public-taxonomy-science_counsil.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-part-public-user_role-science_counsil_editor.php';
 
 		/**
 		 * Класс, отвечающий за регистрацию хуков, фильтров и шорткодов.
@@ -137,9 +141,13 @@ class Manager {
 
 		$class_post_type_dissertation = new PartPostTypeDessertation( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'init', $class_post_type_dissertation, 'register_post_type', 10, 0 );
+		$this->loader->add_action( 'wp', $class_post_type_dissertation, 'registration_deletion_of_old_posts', 10, 0 );
+		$this->loader->add_action( 'delete_old_' . $class_post_type_dissertation->get_part_name(), $class_post_type_dissertation, 'delete_old_posts_run', 10, 0 );
 
 		$class_taxonomy_science_counsil = new PartTaxonomyScienceCounsil( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'init', $class_taxonomy_science_counsil, 'register_taxonomy', 10, 0 );
+
+		$class_user_role_science_counsil_editor = new PartUserRoleScienceCounsilEditor( $this->get_plugin_name(), $this->get_version() );
 
 	}
 
@@ -150,6 +158,13 @@ class Manager {
 	 * @access   private
 	 */
 	private function define_admin_hooks() {
+
+		// роль пользователя "Редактор научного совета"
+		$class_user_role_science_counsil_editor = new PartAdminUserRoleScienceCounsilEditor( $this->get_plugin_name(), $this->get_version() );
+		$this->loader->add_action( 'admin_init', $class_user_role_science_counsil_editor, 'add_capabilities', 10, 0 );
+		$this->loader->add_action( 'pre_get_posts', $class_user_role_science_counsil_editor, 'posts_of_the_current_user', 10, 1 );
+		$this->loader->add_action( 'admin_menu', $class_user_role_science_counsil_editor, 'remove_menus', 10, 0 );
+		$this->loader->add_action( 'admin_init', $class_user_role_science_counsil_editor, 'menus_redirect', 10, 0 );
 
 		// элементы форм
 		$object_control = new Control( $this->get_plugin_name(), $this->get_version() );
@@ -172,6 +187,13 @@ class Manager {
 		$this->loader->add_action( 'add_meta_boxes', $class_post_type_dissertation, 'add_meta_box', 10, 1 );
 		$this->loader->add_action( 'save_post', $class_post_type_dissertation, 'save_post', 10, 2 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $class_post_type_dissertation, 'enqueue_scripts', 10, 0 );
+		$this->loader->add_action( $this->get_plugin_name() . '_register_settings', $class_post_type_dissertation, 'register_settings', 10, 1 );
+		$this->loader->add_filter( $this->get_plugin_name() . '_settings-tabs', $class_post_type_dissertation, 'add_settings_tab', 10, 2 );
+		$this->loader->add_action( $this->get_plugin_name() . '_settings-form_' . $class_post_type_dissertation->get_part_name(), $class_post_type_dissertation, 'render_settings_form', 10, 1 );
+		$this->loader->add_action( 'before_delete_post', $class_post_type_dissertation, 'delete_post_attachment', 10, 2 );
+		$this->loader->add_filter( 'pre_trash_post', $class_post_type_dissertation, 'disable_trash_for_post_type', 10, 2 );
+		$this->loader->add_action( 'added_post_meta', $class_post_type_dissertation, 'attach_file_to_post', 10, 4 );
+		$this->loader->add_action( 'updated_post_meta', $class_post_type_dissertation, 'attach_file_to_post', 10, 4 );
 
 		// таксономия "Научный совет"
 		$class_taxonomy_science_counsil = new PartAdminTaxonomyScienceCounsil( $this->get_plugin_name(), $this->get_version() );
@@ -189,6 +211,11 @@ class Manager {
 	 * @access   private
 	 */
 	private function define_public_hooks() {
+
+		// роль пользователя "Редактор научного совета"
+		$class_user_role_science_counsil_editor = new PartPublicUserRoleScienceCounsilEditor( $this->get_plugin_name(), $this->get_version() );
+		$this->loader->add_filter( 'login_redirect', $class_user_role_science_counsil_editor, 'login_redirect_filter', 10, 3 );
+		$this->loader->add_filter( 'ajax_query_attachments_args', $class_user_role_science_counsil_editor, 'attachments_of_the_current_user', 10, 1 );
 		
 		// тп поста "Диссертации"
 		$class_post_type_dissertation = new PartPublicPostTypeDessertation( $this->get_plugin_name(), $this->get_version() );
@@ -204,7 +231,7 @@ class Manager {
 		
 		// таксономия "Научный совет"
 		$class_taxonomy_science_counsil = new PartPublicTaxonomyScienceCounsil( $this->get_plugin_name(), $this->get_version() );
-		$this->loader->add_shortcode( $class_post_type_dissertation->get_part_name() . '_' . 'list', $class_post_type_dissertation, 'shortode_manager', 10, 3 );
+		$this->loader->add_shortcode( $class_taxonomy_science_counsil->get_part_name() . '_' . 'list_of_posts', $class_taxonomy_science_counsil, 'shortode_manager', 10, 3 );
 
 	}
 
