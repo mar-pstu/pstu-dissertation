@@ -329,15 +329,13 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 		$name = "{$this->post_type_name}[{$id}]";
 		switch ( $id ) {
 
-			
 			case 'meta_only_after_auth':
 				// $value = ( isset( $options[ $id ] ) ) ? $options[ $id ] : [];
 				// echo $this->render_list_of_checkboxes( $name, $this->metabox_fields, [ 'checked' => $value ] );
-				break;
-			
+				break;			
 
-			}
 		}
+	}
 
 
 	/**
@@ -412,11 +410,62 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 	 * @param    WP_Post            $post      объект поста
 	 * @return   true|false|null
 	 */
-	function disable_trash_for_post_type( $null, $post ){
-		if ( $this->post_type_name == $post->post_type ){
+	function disable_trash_for_post_type( $null, $post ) {
+		if ( $this->post_type_name == $post->post_type ) {
 			return wp_delete_post( $post->ID, true );
 		}
 		return $null;
+	}
+
+
+	/**
+	 * Добавляет дополнительную колонку с информацией об авторе диссертации
+	 * @param    array    $columns    массив и идентификторами и заголовками колонок
+	 * @return   array
+	 */
+	public function add_custom_columns( $columns ) {
+		return array_slice( $columns, 0, 2 ) + [
+			'author_full_name' => __( 'Автор диссертации', $this->plugin_name ),
+			'opponents_list' => __( 'Оппоненты', $this->plugin_name ),
+		] + array_slice( $columns, 2 );
+	}
+
+
+	/**
+	 * Выводит информацию об авторе диссертации на странице постов
+	 * @param    string    $column_name    идентификатор колонки
+	 * @param    int       $post_id        идентификатор поста
+	 */
+	public function render_custom_columns( $column_name, $post_id ) {
+		switch ( $column_name ) {
+			case 'author_full_name':
+				echo self::render_person_full_name( get_post_meta( $post_id, 'author', true ) );
+				break;
+			case 'opponents_list':
+				$opponents = get_post_meta( $post_id, 'opponents', true );
+				if ( is_array( $opponents ) && ! empty( $opponents ) ) {
+					echo '<ul class="opponents-list">' . implode( "\r\n", array_map( function ( $opponent ) {
+						return self::render_person_full_name( $opponent );
+					}, $opponents ) ) . '</ul>';
+				}
+				break;
+		}
+	}
+
+
+	/**
+	 * Добавляем стили для зарегистрированных колонок
+	 */
+	public function render_custom_columns_styles() {
+		echo self::css_array_to_css( [
+			'.opponents-list' => [
+				'margin-top'    => '0',
+				'margin-bottom' => '0',
+			],
+		], [
+			'indent'     => 0,
+			'container'  => true,
+		] );
 	}
 
 

@@ -114,9 +114,20 @@ class PartAdminSettingsManager extends Part {
 	 * @since      2.0.0
 	 */
 	public function run_tab() {
-		$tab = ( isset( $_POST[ 'tab' ] ) ) ? $_POST[ 'tab' ] : '';
-		do_action( "{$this->plugin_name}_settings-run_{$tab}" );
+		if ( current_user_can( 'manage_options' ) ) {
+			$tab = ( isset( $_POST[ 'tab' ] ) ) ? $_POST[ 'tab' ] : '';
+			do_action( "{$this->plugin_name}_settings-run_{$tab}" );
+		}
 	}
+
+
+	public function run_ajax() {
+		if ( current_user_can( 'manage_options' ) ) {
+			$tab = ( isset( $_POST[ 'tab' ] ) ) ? $_POST[ 'tab' ] : '';
+			do_action( "{$this->plugin_name}_settings-ajax_{$tab}" );
+		}
+	}
+
 
 
 }

@@ -30,6 +30,14 @@ class Activator {
 	 * @since    2.0.0
 	 */
 	public static function activate() {
+		$options = get_option( PSTU_DISSERTATION_NAME );
+		if ( ! is_array( $options ) && ! array_key_exists( 'version', $options ) && empty( $options[ 'version' ] ) ) {
+			$options = [
+				'version'           => PSTU_DISSERTATION_VERSION,
+				'updating_progress' => false,
+			];
+			update_option( PSTU_DISSERTATION_NAME, $options );
+		}
 		add_role( 'science_counsil_editor', __( 'Редактор научного совета', PSTU_DISSERTATION_NAME ), [
 			'read'         => true,
 			'upload_files' => true,

@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {	exit; };
  * @subpackage pstu_dissertation/admin
  * @author     chomovva <chomovva@gmail.com>
  */
-class AdminReadmeTab extends Part {
+class PartAdminReadmeTab extends Part {
 
 
 	function __construct( $plugin_name, $version ) {
 		parent::__construct( $plugin_name, $version );
-		$this->part_name = 'readme_tab';
+		$this->part_name = 'readme';
 	}
 
 

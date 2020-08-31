@@ -133,4 +133,39 @@ abstract class Part {
 	}
 
 
+	/**
+	 * Конвертер ассоциативного массива в css правила
+	 * @param    array   $rules   ассоциативный массив селектор => правила
+	 * @param    array   $args    параметры преобразования
+	 * @return   string           css правила в виде строки
+	 **/
+	public static function css_array_to_css( $rules, $args = [] ) {
+		$args = array_merge( array(
+			'indent'     => 0,     // вложенность
+			'container'  => false, // нужна ли обёртка <style>
+		), $args );
+		$css = '';
+		$prefix = str_repeat( '  ', $args[ 'indent' ] );
+		foreach ($rules as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$selector = $key;
+				$properties = $value;
+				$css .= $prefix . "$selector {\n";
+				$css .= $prefix . self::css_array_to_css( $properties, [
+					'indent'     => $args[ 'indent' ] + 1,
+					'container'  => false,
+				] );
+				$css .= $prefix . "}\n";
+			} else {
+				$property = $key;
+				if ( filter_var( $value, FILTER_VALIDATE_URL ) ) {
+					$value = 'url(' . $value . ')';
+				}
+				$css .= $prefix . "$property: $value;\n";
+			}
+		}
+		return ( $args[ 'container' ] ) ? "\n<style>\n" . $css . "\n</style>\n" : $css;
+	}
+
+
 }

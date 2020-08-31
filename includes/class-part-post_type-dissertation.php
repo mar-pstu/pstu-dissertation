@@ -110,4 +110,28 @@ class PartPostTypeDessertation extends PostType {
 	}
 
 
+	/**
+	 * Формирует ФИО из массива с данными
+	 * @param    array    $info   массив с данными
+	 * @return   string
+	 */
+	public static function render_person_full_name( $info = [] ) {
+		$result = '';
+		if ( is_array( $info ) ) {
+			$info = array_merge( [
+				'last_name'   => '',
+				'first_name'  => '',
+				'middle_name' => '',
+			], $info );
+			$result = trim( sprintf(
+				'%1$s %2$s %3$s',
+				$info[ 'last_name' ],
+				$info[ 'first_name' ],
+				$info[ 'middle_name' ]
+			) );
+		}
+		return $result;
+	}
+
+
 }

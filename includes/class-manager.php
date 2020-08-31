@@ -77,6 +77,7 @@ class Manager {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/abstract-part-taxonomy.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/abstract-part-user_role.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-control.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-parsedown.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-part-post_type-dissertation.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-part-taxonomy-science_counsil.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-part-user_role-science_counsil_editor.php';
@@ -85,8 +86,8 @@ class Manager {
 		 * Классы отвечающие за функционал админки
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/trait-controls.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-admin-parsedown.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-readme_tab.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-update_tab.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-settings-manager.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-post_type-dissertation.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-part-admin-taxonomy-science_counsil.php';
@@ -149,6 +150,10 @@ class Manager {
 
 		$class_user_role_science_counsil_editor = new PartUserRoleScienceCounsilEditor( $this->get_plugin_name(), $this->get_version() );
 
+		$class_part_update_tab = new PartAdminUpdateTab( $this->get_plugin_name(), $this->get_version() );
+		$this->loader->add_action( 'get_header', $class_part_update_tab, 'enable_maintenance_mode', 10, 0 );
+		$this->loader->add_action( 'wp_ajax_' . $this->get_plugin_name() . '_settings', $class_part_update_tab, 'run_ajax', 10, 0 );
+
 	}
 
 
@@ -176,11 +181,19 @@ class Manager {
 		$this->loader->add_action( 'admin_menu', $class_part_settings_manager, 'add_page' );
 		$this->loader->add_action( 'current_screen', $class_part_settings_manager, 'run_tab' );
 		$this->loader->add_action( 'admin_init', $class_part_settings_manager, 'register_settings', 10, 0 );
+		$this->loader->add_action( 'wp_ajax_' . $this->get_plugin_name() . '_settings', $class_part_settings_manager, 'run_ajax', 20, 0 );
 
 		// вывод справки по плагину
-		$class_part_readme_tab = new AdminReadmeTab( $this->get_plugin_name(), $this->get_version() );
+		$class_part_readme_tab = new PartAdminReadmeTab( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_filter( $this->get_plugin_name() . '_settings-tabs', $class_part_readme_tab, 'add_settings_tab', 10, 1 );
 		$this->loader->add_action( $this->get_plugin_name() . '_settings-form_' . $class_part_readme_tab->get_part_name(), $class_part_readme_tab, 'render_tab', 10, 1 );
+
+		// вкладка обновления
+		$class_part_update_tab = new PartAdminUpdateTab( $this->get_plugin_name(), $this->get_version() );
+		$this->loader->add_action( 'admin_notices', $class_part_update_tab, 'check_update_notice', 10, 0 );
+		$this->loader->add_filter( $this->get_plugin_name() . '_settings-tabs', $class_part_update_tab, 'add_settings_tab', 10, 1 );
+		$this->loader->add_action( $this->get_plugin_name() . '_settings-form_' . $class_part_update_tab->get_part_name(), $class_part_update_tab, 'render_tab', 10, 1 );
+		$this->loader->add_action( 'admin_enqueue_scripts', $class_part_update_tab, 'enqueue_scripts', 10, 0 );
 
 		// тип поста "Диссертации"
 		$class_post_type_dissertation = new PartAdminPostTypeDessertation( $this->get_plugin_name(), $this->get_version() );
@@ -194,6 +207,9 @@ class Manager {
 		$this->loader->add_filter( 'pre_trash_post', $class_post_type_dissertation, 'disable_trash_for_post_type', 10, 2 );
 		$this->loader->add_action( 'added_post_meta', $class_post_type_dissertation, 'attach_file_to_post', 10, 4 );
 		$this->loader->add_action( 'updated_post_meta', $class_post_type_dissertation, 'attach_file_to_post', 10, 4 );
+		$this->loader->add_filter( 'manage_' . $class_post_type_dissertation->get_post_type_name() . '_posts_columns', $class_post_type_dissertation, 'add_custom_columns', 10, 1 );
+		$this->loader->add_action( 'manage_' . $class_post_type_dissertation->get_post_type_name() . '_posts_custom_column', $class_post_type_dissertation, 'render_custom_columns', 5, 2 );
+		$this->loader->add_action( 'admin_print_footer_scripts-edit.php', $class_post_type_dissertation, 'render_custom_columns_styles', 10, 4 );
 
 		// таксономия "Научный совет"
 		$class_taxonomy_science_counsil = new PartAdminTaxonomyScienceCounsil( $this->get_plugin_name(), $this->get_version() );
