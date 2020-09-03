@@ -131,10 +131,17 @@ class PartAdminUpdateTab extends Part {
 
 		// обновление контакторв
 		$count_dissertations = wp_count_posts( 'dissertation' )->publish;
+		$dissertation_settings = get_option( 'dissertation', [] );
+		if ( ! is_array( $dissertation_settings ) ) {
+			$$dissertation_settings = [];
+		}
+		if ( ! array_key_exists( 'deletion_interval', $dissertation_settings ) ) {
+			$dissertation_settings[ 'deletion_interval' ] = '+1 month';
+		}
 		if ( $count_dissertations > $this->options[ 'updating_progress' ][ 'dissertation' ] ) {
 			$result[ 'done' ] = false;
 			$dissertations = get_posts( [
-				'numberposts' => 5,
+				'numberposts' => 2,
 				'offset'      => $this->options[ 'updating_progress' ][ 'dissertation' ],
 				'post_type'   => 'dissertation',
 			] );
@@ -150,10 +157,13 @@ class PartAdminUpdateTab extends Part {
 							'publication'     => '',
 							'protection_time' => '',
 						], $old_meta );
-						foreach ( [ 'opponents', 'author', 'protection', 'publication', 'protection_time' ] as $meta_key ) {
+						foreach ( [ 'author', 'protection', 'publication', 'protection_time' ] as $meta_key ) {
 							add_post_meta( $dissertation->ID, $meta_key, $old_meta[ $meta_key ], true );
 						}
+						add_post_meta( $dissertation->ID, 'opponents', PartPostTypeDessertation::sanitize_opponents( $old_meta[ 'opponents' ] ), true );
 						delete_post_meta( $dissertation->ID, $meta_key );
+						$delete_date = strtotime( $dissertation_settings[ 'deletion_interval' ], strtotime( get_post_meta( $dissertation->ID, 'publication', true ) ) );
+						add_post_meta( $dissertation->ID, 'delete_date', $delete_date, true );
 					}
 				}
 				$this->options[ 'updating_progress' ][ 'dissertation' ] += count( $dissertations );
@@ -163,11 +173,11 @@ class PartAdminUpdateTab extends Part {
 			}
 		} else {
 			// сообщ ние об успешном обновлении
-			$result[ 'message' ] .= '<p>' . __( 'Контакты обновлены!', $this->plugin_name ) . '</p>';
+			$result[ 'message' ] .= '<p>' . __( 'Диссертации обновлены!', $this->plugin_name ) . '</p>';
 		}
 		// завершаем обновление
 		if ( $result[ 'done' ] ) {
-			// $this->options[ 'version' ] = $this->version;
+			$this->options[ 'version' ] = $this->version;
 			$result[ 'message' ] .= '<p>' . __( 'Обновление завершено! Перезагрузка ...', $this->plugin_name ) . '</p>';
 			$this->options[ 'updating_progress' ] = false;
 		}
@@ -182,6 +192,20 @@ class PartAdminUpdateTab extends Part {
 	 */
 	public function enqueue_scripts() {
 		wp_enqueue_script( $this->part_name, plugin_dir_url( __FILE__ ) . "scripts/{$this->part_name}.js",  array( 'jquery' ), $this->version, false );
+	}
+
+
+	/**
+	 * Закрываем сайт на время обновления
+	 **/
+	public function enable_maintenance_mode() {
+		if ( $this->options[ 'updating_progress' ] && ! wp_doing_ajax() ) {
+			wp_die( sprintf(
+				'<h1>%1$s</h1><p>%2$s</p>',
+				__( 'Сайт закрыт на обслуживание', $this->plugin_name ),
+				__( 'Обновите страницу через несколько минут', $this->plugin_name )
+			) );
+		}
 	}
 
 

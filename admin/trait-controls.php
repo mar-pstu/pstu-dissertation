@@ -267,7 +267,7 @@ trait Controls {
 	 * @param  array $not_empty         параметры которые не могут быть пустыми
 	 * @return array                    возвращает ощиченный массив разрешённых параметров
 	 */
-	public function parse_only_allowed_args( $default, $args, $sanitize_callback = [], $required = [], $not_empty = [] ) {
+	public static function parse_only_allowed_args( $default, $args, $sanitize_callback = [], $required = [], $not_empty = [] ) {
 		$args = ( array ) $args;
 		$result = [];
 		$count = 0;

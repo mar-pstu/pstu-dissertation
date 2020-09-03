@@ -21,9 +21,7 @@ class PartTaxonomyScienceCounsil extends Taxonomy {
 		parent::__construct( $plugin_name, $version );
 		$this->part_name = 'science_counsil';
 		$this->taxonomy_name = 'science_counsil';
-		$this->meta_fields = [
-			
-		];
+		$this->meta_fields = [];
 	}
 
 

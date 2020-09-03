@@ -110,8 +110,6 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 				$result = ( empty( trim( $value ) ) ) ? date( 'Y-m-d' ) : date( 'Y-m-d', strtotime( $value ) );
 				break;
 			case 'delete_date':
-				$result = ( empty( trim( $value ) ) ) ? date( 'Y-m-d', strtotime( '+3 month' ) ) : date( 'Y-m-d', strtotime( $value ) );
-				break;
 			case 'protection':
 				$result = ( empty( trim( $value ) ) ) ? '' : date( 'Y-m-d', strtotime( $value ) );
 				break;
@@ -135,27 +133,7 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 				] );
 				break;
 			case 'opponents':
-				$result = ( is_array( $value ) && ! empty( $value ) ) ? array_filter( array_map( function ( $item ) {
-					return $this->parse_only_allowed_args( [
-						'last_name'   => '',
-						'first_name'  => '',
-						'middle_name' => '',
-						'degree'      => '',
-						'workplace'   => '',
-						'opinion'     => '',
-					], $item, [
-						'sanitize_text_field',
-						'sanitize_text_field',
-						'sanitize_text_field',
-						'sanitize_text_field',
-						'sanitize_text_field',
-						'esc_url_raw',
-					], [
-						'last_name', 'first_name', 'middle_name'
-					], [
-						'last_name', 'first_name', 'middle_name'
-					] );
-				} , $value ) ) : [];
+				$result = self::sanitize_opponents( $value );
 				break;
 			default:
 				$result = sanitize_text_field( $value );
@@ -183,8 +161,13 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 						'id'    => $id,
 					] );
 					break;
-				case 'publication':
 				case 'delete_date':
+					$control = $this->render_input( $name, 'text', [
+						'value' => ( empty( $value ) ) ? date( 'Y-m-d', strtotime( $this->settings[ 'deletion_interval' ] ) ) : $value,
+						'id'    => $id,
+					] );
+					break;
+				case 'publication':
 				case 'protection':
 					$control = $this->render_input( $name, 'text', [
 						'value' => $value,
@@ -295,7 +278,7 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 		wp_add_inline_script( 'jquery.maskedinput', "jQuery(function($){jQuery('#{$this->part_name}_protection_time').mask('99:99');});", 'after' );
 		wp_add_inline_script( 'jquery-ui-datepicker', "jQuery( '#{$this->part_name}_publication' ).datepicker( { dateFormat: 'yy-mm-dd' } );", 'after' );
 		wp_add_inline_script( 'jquery-ui-datepicker', "jQuery( '#{$this->part_name}_delete_date' ).datepicker( { dateFormat: 'yy-mm-dd' } );", 'after' );
-		wp_add_inline_script( 'jquery-ui-datepicker', "jQuery( '#{$this->part_name}_protection' ).datepicker( { dateFormat: 'yy-mm.dd' } );", 'after' );
+		wp_add_inline_script( 'jquery-ui-datepicker', "jQuery( '#{$this->part_name}_protection' ).datepicker( { dateFormat: 'yy-mm-dd' } );", 'after' );
 	}
 
 
@@ -303,19 +286,39 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 	 * Регистрирует настройки плагина
 	 */
 	public function register_settings() {
-		// register_setting( $this->part_name, $this->part_name, [ $this, 'sanitize_setting_callback' ] );
-		// add_settings_section( 'archive_page', __( 'Страница архива', $this->plugin_name ), [ $this, 'render_section_info' ], $this->part_name ); 
-		// add_settings_field( 'archive_container_fluid', __( 'Контейнер по ширине', $this->plugin_name ), [ $this, 'render_setting_field'], $this->part_name, 'archive_page', 'archive_container_fluid' );
-		// add_settings_field( 'archive_description', __( 'Описание архива', $this->plugin_name ), [ $this, 'render_setting_field'], $this->part_name, 'archive_page', 'archive_description' );
-		// do_action( "{$this->plugin_name}_register_settings", $this->settings_page_slug );
-		// add_settings_section( 'single_page', __( 'Страница поста', $this->plugin_name ), [ $this, 'render_section_info' ], $this->part_name ); 
-		// add_settings_field( 'single_container_fluid', __( 'Контейнер по ширине', $this->plugin_name ), [ $this, 'render_setting_field'], $this->part_name, 'single_page', 'single_container_fluid' );
-		// add_settings_field( 'single_template', __( 'Использовать отдельный шаблон', $this->plugin_name ), [ $this, 'render_setting_field'], $this->part_name, 'single_page', 'single_template' );
-		// add_settings_field( 'single_content_before', __( 'Текст перед', $this->plugin_name ), [ $this, 'render_setting_field'], $this->part_name, 'single_page', 'single_content_before' );
-		// add_settings_field( 'single_content_after', __( 'Текст после', $this->plugin_name ), [ $this, 'render_setting_field'], $this->part_name, 'single_page', 'single_content_after' );
-		// add_settings_section( 'access', __( 'Доступ', $this->plugin_name ), [ $this, 'render_section_info' ], $this->part_name );
-		// add_settings_field( 'no_access_message', __( 'Текст, который отображается если нет доступа', $this->plugin_name ), [ $this, 'render_setting_field'], $this->part_name, 'access', 'no_access_message' );
-		// add_settings_field( 'meta_only_after_auth', __( 'Мета-параметры доступные только после аутентификации', $this->plugin_name ), [ $this, 'render_setting_field'], $this->part_name, 'access', 'meta_only_after_auth' );
+		register_setting( $this->post_type_name, $this->post_type_name, [ $this, 'sanitize_setting_callback' ] );
+		add_settings_section( 'removal_procedure', __( 'Процедура удаления', $this->plugin_name ), [ $this, 'render_section_info' ], $this->post_type_name ); 
+		add_settings_field( 'auto_delete', __( 'Автоудаление', $this->plugin_name ), [ $this, 'render_setting_field'], $this->post_type_name, 'removal_procedure', 'auto_delete' );
+		add_settings_field( 'deletion_interval', __( 'Интервал удаления', $this->plugin_name ), [ $this, 'render_setting_field'], $this->post_type_name, 'removal_procedure', 'deletion_interval' );
+	}
+
+
+	/**
+	 * Выводит html-код формы ввода настроек для таксономии
+	 * @param    string    $page_slug    идентификатор страницы настроек
+	 */
+	public function render_settings_form( string $page_slug ) {
+		?>
+			<form action="options.php" method="POST">
+				<?php
+					settings_fields( $this->post_type_name );
+					do_settings_sections( $this->post_type_name );
+					submit_button();
+				?>
+			</form>
+		<?php
+	}
+
+
+	/**
+	 * Описание секции настроек
+	 * @param  [type] $section [description]
+	 */
+	public function render_section_info( $section ) {
+		if ( null != $this->part_name ) {
+			$file_path = dirname( __FILE__ ) . "/helpers/{$this->part_name}-section_info-{$section[ 'id' ]}.md";
+			echo $this->get_parsedown_text( $file_path );
+		}
 	}
 
 
@@ -329,9 +332,25 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 		$name = "{$this->post_type_name}[{$id}]";
 		switch ( $id ) {
 
-			case 'meta_only_after_auth':
-				// $value = ( isset( $options[ $id ] ) ) ? $options[ $id ] : [];
-				// echo $this->render_list_of_checkboxes( $name, $this->metabox_fields, [ 'checked' => $value ] );
+			case 'auto_delete':
+				$atts = [ 'id' => $id ];
+				if ( isset( $options[ $id ] ) ) {
+					$atts[ 'checked' ] = 'checked';
+				}
+				echo $this->render_checkbox( $name, 'on', __( 'да', $this->plugin_name ), $atts );
+				break;
+
+			case 'deletion_interval':
+				$value = ( isset( $options[ $id ] ) ) ? $options[ $id ] : [];
+				echo $this->render_dropdown( $name, apply_filters( "{$this->plugin_name}-time_intervals", [] ), [
+					'selected'          => $value,
+					'echo'              => false,
+					'show_option_none'  => false,
+					'atts'              => [
+						'id'                => $id,
+						'class'             => 'form-control',
+					]
+				] );
 				break;			
 
 		}
@@ -349,19 +368,17 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 			$new_value = null;
 			switch ( $name ) {
 
-				// case 'meta_only_after_auth':
-				// 	$new_value = [];
-				// 	if ( is_array( $value ) ) {
-				// 		foreach ( $value as $key ) {
-				// 			if ( array_key_exists( $key, $this->metabox_fields ) ) {
-				// 				$new_value[] = $key;
-				// 			}
-				// 		}
-				// 	}
-				// 	break;
-				// case 'no_access_message':
-				// 	$new_value = sanitize_text_field( $value );
-				// 	break;
+				case 'auto_delete':
+					if ( 'on' == trim( $value ) ) {
+						$new_value = true;
+					}
+					break;
+
+				case 'deletion_interval':
+					if ( array_key_exists( $value, apply_filters( "{$this->plugin_name}-time_intervals", [] ) ) ) {
+						$new_value = $value;
+					}
+					break;
 
 			}
 			if ( null != $new_value && ! empty( $new_value ) ) {
@@ -425,8 +442,11 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 	 */
 	public function add_custom_columns( $columns ) {
 		return array_slice( $columns, 0, 2 ) + [
-			'author_full_name' => __( 'Автор диссертации', $this->plugin_name ),
-			'opponents_list' => __( 'Оппоненты', $this->plugin_name ),
+			'author_full_name' => __( 'Дата публикации на сайте', $this->plugin_name ),
+			'opponents_list'   => __( 'Оппоненты', $this->plugin_name ),
+			'publication'      => __( 'Публикация на сайте', $this->plugin_name ),
+			'delete_date'      => __( 'Удаления с сайта', $this->plugin_name ),
+			'protection'       => __( 'Защита', $this->plugin_name ),
 		] + array_slice( $columns, 2 );
 	}
 
@@ -444,10 +464,21 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 			case 'opponents_list':
 				$opponents = get_post_meta( $post_id, 'opponents', true );
 				if ( is_array( $opponents ) && ! empty( $opponents ) ) {
-					echo '<ul class="opponents-list">' . implode( "\r\n", array_map( function ( $opponent ) {
-						return self::render_person_full_name( $opponent );
-					}, $opponents ) ) . '</ul>';
+					echo implode( ", ", array_map( function ( $opponent ) {
+						$opponent_full_name = self::render_person_full_name( $opponent );
+						return ( empty( trim( $opponent_full_name ) ) ) ? '-' : $opponent_full_name;
+					}, $opponents ) );
 				}
+				break;
+			case 'publication':
+				echo get_post_meta( $post_id, $column_name, true );
+				break;
+			case 'delete_date':
+				$delete_date = get_post_meta( $post_id, $column_name, true );
+				echo $delete_date;
+				break;
+			case 'protection':
+				echo get_post_meta( $post_id, 'protection', true ) . ' ' . get_post_meta( $post_id, 'protection_time', true );
 				break;
 		}
 	}
@@ -458,9 +489,8 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 	 */
 	public function render_custom_columns_styles() {
 		echo self::css_array_to_css( [
-			'.opponents-list' => [
-				'margin-top'    => '0',
-				'margin-bottom' => '0',
+			'.text-warning' => [
+				'color'         => '#ff0000',
 			],
 		], [
 			'indent'     => 0,

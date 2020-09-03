@@ -17,6 +17,15 @@ if ( ! defined( 'ABSPATH' ) ) {	exit; };
 class PartPostTypeDessertation extends PostType {
 
 
+	/**
+	 * Идентификатор части плагина
+	 * @since    2.0.0
+	 * @access   private
+	 * @var      string    $version    идентификатор "части" плагина
+	 */
+	protected $settings;
+
+
 	function __construct( $plugin_name, $version ) {
 		parent::__construct( $plugin_name, $version );
 		$this->part_name = 'dissertation';
@@ -31,9 +40,16 @@ class PartPostTypeDessertation extends PostType {
 			'author'          => __( 'Автор', $this->plugin_name ),
 			'opponents'       => __( 'Оппоненты', $this->plugin_name ),
 		];
+		$this->settings = array_merge( [
+			'deletion_interval' => '+1 month',
+			'auto_delete'       => false,
+		], get_option( $this->post_type_name, [] ) );
 	}
 
 
+	/**
+	 * регистрациятипа поста "Диссертация"
+	 */
 	public function register_post_type() {
 		register_post_type( $this->post_type_name, [
 			'labels'             => [
@@ -77,11 +93,22 @@ class PartPostTypeDessertation extends PostType {
 
 
 	/**
-	 * Планируем функцию удаления старых диссертаций
+	 * Планирование событий для типа поста "Диссертации"
 	 */
-	public function registration_deletion_of_old_posts() {
-		if ( ! wp_next_scheduled( "delete_old_{$this->post_type_name}" ) ) {
-			wp_schedule_event( time(), 'daily', "delete_old_{$this->post_type_name}" );
+	public function registration_schedule_event() {
+		if ( ! wp_next_scheduled( "delete_old_{$this->post_type_name}-run" ) ) {
+			if ( $this->settings[ 'auto_delete' ] ) {
+				wp_schedule_event( time(), 'daily', "delete_old_{$this->post_type_name}-run" );
+			} else {
+				wp_clear_scheduled_hook( "delete_old_{$this->post_type_name}-run" );
+			}
+		}
+		if ( ! wp_next_scheduled( "delete_old_{$this->post_type_name}-notification" ) ) {
+			if ( $this->settings[ 'auto_delete' ] ) {
+				wp_schedule_event( time(), 'daily', "delete_old_{$this->post_type_name}-notification" );
+			} else {
+				wp_clear_scheduled_hook( "delete_old_{$this->post_type_name}-notification" );
+			}
 		}
 	}
 
@@ -90,21 +117,63 @@ class PartPostTypeDessertation extends PostType {
 	 * Выполняем очистку старых диссертаций
 	 */
 	public function delete_old_posts_run() {
-		$entries = get_posts( [
-			'post_type'  => $this->post_type_name,
-			'meta_query' => [
-				'relation' => 'AND',
-				[
-					'key'     => 'delete_date',
-					'value'   => date( 'Y-m-d' ),
-					'compare' => '<=',
-					'type'    => 'DATE',
+		if ( $this->settings[ 'auto_delete' ] ) {
+			$entries = get_posts( [
+				'post_type'  => $this->post_type_name,
+				'meta_query' => [
+					'relation' => 'AND',
+					[
+						'key'     => 'delete_date',
+						'value'   => date( 'Y-m-d' ),
+						'compare' => '<=',
+						'type'    => 'DATE',
+					],
 				],
-			],
-		] );
-		if ( is_array( $entries ) && ! empty( $entries ) ) {
-			foreach ( $entries as $entry ) {
-				wp_delete_post( $entry->ID, false );
+			] );
+			if ( is_array( $entries ) && ! empty( $entries ) ) {
+				foreach ( $entries as $entry ) {
+					wp_delete_post( $entry->ID, false );
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Выполняем очистку старых диссертаций
+	 */
+	public function delete_old_posts_notification() {
+		if ( $this->settings[ 'auto_delete' ] ) {
+			$entries = get_posts( [
+				'post_type'  => $this->post_type_name,
+				'meta_query' => [
+					'relation' => 'AND',
+					[
+						'key'     => 'delete_date',
+						'value'   => date( 'Y-m-d', strtotime( '+2 day' ) ),
+						'compare' => '<=',
+						'type'    => 'DATE',
+					],
+					[
+						'key'     => 'delete_notification',
+						'compare' => 'NOT EXISTS',
+					]
+				],
+			] );
+			if ( is_array( $entries ) && ! empty( $entries ) ) {
+				foreach ( $entries as $entry ) {
+					$author_email = get_the_author_meta( 'user_email', $entry->post_author );
+					if ( ! empty( $author_email ) ) {
+						add_post_meta( $entry->ID, 'delete_notification', $author_email, true );
+						wp_mail(
+							$author_email,
+							$subject = sprintf( '%1$s %2$s', __( 'Сообщение с сайта', RESUME_TEXTDOMAIN ), get_bloginfo( 'name', 'raw' ) ),
+							sprintf( __( 'Оповещение! %s будет автоматически удалена Ваша публикая <a href="%s">"%s"</a>', $this->plugin_name ), get_post_meta( $entry->ID, 'delete_date', true ), get_permalink( $entry->ID, false ), $entry->post_title ),
+							$headers = sprintf( 'From: %1$s <%2$s>%3$sContent-type: text/html%3$scharset=utf-8%3$s', $fields[ 'author' ], $fields[ 'email' ], "\r\n" ),
+							[]
+						);
+					}
+				}
 			}
 		}
 	}
@@ -131,6 +200,60 @@ class PartPostTypeDessertation extends PostType {
 			) );
 		}
 		return $result;
+	}
+
+
+	/**
+	 * Проверяет доступ пользователя к метаданных
+	 * @param  null/array/string   $value       обрабатываемое значение
+	 * @param  int                 $object_id   Идентификатор объекта для которого получаем метаданые
+	 * @param  string              $meta_key    ключ метаданных
+	 * @param  bool                $single      Возвращать только первое значение или весь массив значений
+	 * @return null/array/string                результат после обработки
+	 */
+	public function default_meta( $value, $object_id, $meta_key, $single ) {
+		if ( get_post_type( $object_id ) == $this->post_type_name && empty( $value ) ) {
+			switch ( $meta_key ) {
+				case 'delete_date':
+					$publication = get_post_meta( $object_id, 'publication', true );
+					$value = date( 'Y-m-d', strtotime( $this->settings[ 'deletion_interval' ], strtotime( ( empty( $publication ) ? get_the_date( 'Y-m-d', $object_id ) : $publication ) ) ) );
+					break;
+				case 'publication':
+					$value = get_the_date( 'Y-m-d', $object_id );
+					break;
+			}
+		}
+		return $value;
+	}
+
+
+	/**
+	 * Очищает массив с информацией о оппонентах
+	 * @param    array   $opponents   неочищенный массиы
+	 * @return   array
+	 */
+	public static function sanitize_opponents( $opponents = [] ) {
+		return ( is_array( $opponents ) ) ? array_filter( array_map( function ( $item ) {
+			return Control::parse_only_allowed_args( [
+				'last_name'   => '',
+				'first_name'  => '',
+				'middle_name' => '',
+				'degree'      => '',
+				'workplace'   => '',
+				'opinion'     => '',
+			], $item, [
+				'sanitize_text_field',
+				'sanitize_text_field',
+				'sanitize_text_field',
+				'sanitize_text_field',
+				'sanitize_text_field',
+				'esc_url_raw',
+			], [
+				'last_name', 'first_name', 'middle_name'
+			], [
+				'last_name', 'first_name', 'middle_name'
+			] );
+		}, $opponents ) ) : [];
 	}
 
 

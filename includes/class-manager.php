@@ -139,11 +139,14 @@ class Manager {
 
 		$plugin_init = new Init( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'init', $plugin_init, 'register_taxonomy_for_object_type', 20, 0 );
+		$this->loader->add_filter( $this->get_plugin_name() . '-time_intervals', $plugin_init, 'filter_time_intervals', 5, 1 );
 
 		$class_post_type_dissertation = new PartPostTypeDessertation( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'init', $class_post_type_dissertation, 'register_post_type', 10, 0 );
-		$this->loader->add_action( 'wp', $class_post_type_dissertation, 'registration_deletion_of_old_posts', 10, 0 );
-		$this->loader->add_action( 'delete_old_' . $class_post_type_dissertation->get_part_name(), $class_post_type_dissertation, 'delete_old_posts_run', 10, 0 );
+		$this->loader->add_action( 'wp', $class_post_type_dissertation, 'registration_schedule_event', 10, 0 );
+		$this->loader->add_action( 'delete_old_' . $class_post_type_dissertation->get_part_name() . '-run', $class_post_type_dissertation, 'delete_old_posts_run', 10, 0 );
+		$this->loader->add_action( 'delete_old_' . $class_post_type_dissertation->get_part_name() . '-notification', $class_post_type_dissertation, 'delete_old_posts_notification', 10, 0 );
+		$this->loader->add_filter( 'get_post_metadata', $class_post_type_dissertation, 'default_meta', 10, 4 );
 
 		$class_taxonomy_science_counsil = new PartTaxonomyScienceCounsil( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'init', $class_taxonomy_science_counsil, 'register_taxonomy', 10, 0 );
@@ -202,7 +205,7 @@ class Manager {
 		$this->loader->add_action( 'admin_enqueue_scripts', $class_post_type_dissertation, 'enqueue_scripts', 10, 0 );
 		$this->loader->add_action( $this->get_plugin_name() . '_register_settings', $class_post_type_dissertation, 'register_settings', 10, 1 );
 		$this->loader->add_filter( $this->get_plugin_name() . '_settings-tabs', $class_post_type_dissertation, 'add_settings_tab', 10, 2 );
-		$this->loader->add_action( $this->get_plugin_name() . '_settings-form_' . $class_post_type_dissertation->get_part_name(), $class_post_type_dissertation, 'render_settings_form', 10, 1 );
+		$this->loader->add_action( $this->get_plugin_name() . '_settings-form_' . $class_post_type_dissertation->get_post_type_name(), $class_post_type_dissertation, 'render_settings_form', 10, 1 );
 		$this->loader->add_action( 'before_delete_post', $class_post_type_dissertation, 'delete_post_attachment', 10, 2 );
 		$this->loader->add_filter( 'pre_trash_post', $class_post_type_dissertation, 'disable_trash_for_post_type', 10, 2 );
 		$this->loader->add_action( 'added_post_meta', $class_post_type_dissertation, 'attach_file_to_post', 10, 4 );

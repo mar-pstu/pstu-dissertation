@@ -41,7 +41,7 @@ class PartAdminReadmeTab extends Part {
 	 * Генерируем html код страницы настроек
 	 */
 	public function render_tab() {
-		echo $this->get_parsedown_text( plugin_dir_path( dirname( __FILE__ ) ) . 'readme.md' );
+		echo $this->get_parsedown_text( plugin_dir_path( dirname( __FILE__ ) ) . 'README.md' );
 	}
 
 
