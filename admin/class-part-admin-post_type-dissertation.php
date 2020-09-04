@@ -165,7 +165,7 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 					$control = $this->render_input( $name, 'text', [
 						'value' => ( empty( $value ) ) ? date( 'Y-m-d', strtotime( $this->settings[ 'deletion_interval' ] ) ) : $value,
 						'id'    => $id,
-					] );
+					] ) . '&nbsp;&nbsp;' . $this->render_checkbox( $name . '_auto', '', __( 'авто', $this->plugin_name ), [ 'id' => $id . '_auto' ] );
 					break;
 				case 'publication':
 				case 'protection':
@@ -274,11 +274,19 @@ class PartAdminPostTypeDessertation extends PartPostTypeDessertation {
 	 * @since    2.0.0
 	 */
 	public function enqueue_scripts() {
+		$delete_date_auto_script = <<< EOF
+jQuery( document ).ready( function () {
+	jQuery( '[name=delete_date_auto]' ).change( function ( e ) {
+		jQuery( '[name=delete_date]' ).prop( 'disabled', jQuery( this ).is( ':checked' ) );
+	} ).prop( 'checked', false );
+} );
+EOF;
 		wp_enqueue_script( 'jquery.maskedinput', plugin_dir_url( __FILE__ ) . 'scripts/jquery.maskedinput.js',  [ 'jquery' ], '1.4.1', false );
 		wp_add_inline_script( 'jquery.maskedinput', "jQuery(function($){jQuery('#{$this->part_name}_protection_time').mask('99:99');});", 'after' );
 		wp_add_inline_script( 'jquery-ui-datepicker', "jQuery( '#{$this->part_name}_publication' ).datepicker( { dateFormat: 'yy-mm-dd' } );", 'after' );
 		wp_add_inline_script( 'jquery-ui-datepicker', "jQuery( '#{$this->part_name}_delete_date' ).datepicker( { dateFormat: 'yy-mm-dd' } );", 'after' );
 		wp_add_inline_script( 'jquery-ui-datepicker', "jQuery( '#{$this->part_name}_protection' ).datepicker( { dateFormat: 'yy-mm-dd' } );", 'after' );
+		wp_add_inline_script( 'jquery', $delete_date_auto_script, 'after' );
 	}
 
 

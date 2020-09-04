@@ -205,13 +205,14 @@ class PartPostTypeDessertation extends PostType {
 
 	/**
 	 * Проверяет доступ пользователя к метаданных
-	 * @param  null/array/string   $value       обрабатываемое значение
-	 * @param  int                 $object_id   Идентификатор объекта для которого получаем метаданые
-	 * @param  string              $meta_key    ключ метаданных
-	 * @param  bool                $single      Возвращать только первое значение или весь массив значений
-	 * @return null/array/string                результат после обработки
+	 * @param  null/array/string   $value        значение
+	 * @param  int                 $object_id    Идентификатор объекта для которого получаем метаданые
+	 * @param  string              $meta_key     ключ метаданных
+	 * @param  bool                $single       Возвращать только первое значение или весь массив значений
+	 * @param  string              $meta_type    тип объекта
+	 * @return null/array/string                 результат после обработки
 	 */
-	public function default_meta( $value, $object_id, $meta_key, $single ) {
+	public function default_meta( $value, $object_id, $meta_key, $single, $meta_type ) {
 		if ( get_post_type( $object_id ) == $this->post_type_name && empty( $value ) ) {
 			switch ( $meta_key ) {
 				case 'delete_date':
