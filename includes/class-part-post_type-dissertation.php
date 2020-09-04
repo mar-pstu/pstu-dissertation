@@ -118,6 +118,7 @@ class PartPostTypeDessertation extends PostType {
 	 */
 	public function delete_old_posts_run() {
 		if ( $this->settings[ 'auto_delete' ] ) {
+			$current_date = date( 'Y-m-d' );
 			$entries = get_posts( [
 				'post_type'  => $this->post_type_name,
 				'meta_query' => [
@@ -128,11 +129,17 @@ class PartPostTypeDessertation extends PostType {
 						'compare' => '<=',
 						'type'    => 'DATE',
 					],
+					[
+						'key'     => 'delete_date',
+						'compare' => 'NOT EXISTS',
+					]
 				],
 			] );
 			if ( is_array( $entries ) && ! empty( $entries ) ) {
 				foreach ( $entries as $entry ) {
-					wp_delete_post( $entry->ID, false );
+					if ( get_post_meta( $entry->ID, 'delete_date', true ) == $current_date ) {
+						wp_delete_post( $entry->ID, false );
+					}
 				}
 			}
 		}
@@ -155,6 +162,10 @@ class PartPostTypeDessertation extends PostType {
 						'type'    => 'DATE',
 					],
 					[
+						'key'     => 'delete_date',
+						'compare' => 'NOT EXISTS',
+					],
+					[
 						'key'     => 'delete_notification',
 						'compare' => 'NOT EXISTS',
 					]
@@ -162,16 +173,18 @@ class PartPostTypeDessertation extends PostType {
 			] );
 			if ( is_array( $entries ) && ! empty( $entries ) ) {
 				foreach ( $entries as $entry ) {
-					$author_email = get_the_author_meta( 'user_email', $entry->post_author );
-					if ( ! empty( $author_email ) ) {
-						add_post_meta( $entry->ID, 'delete_notification', $author_email, true );
-						wp_mail(
-							$author_email,
-							$subject = sprintf( '%1$s %2$s', __( 'Сообщение с сайта', RESUME_TEXTDOMAIN ), get_bloginfo( 'name', 'raw' ) ),
-							sprintf( __( 'Оповещение! %s будет автоматически удалена Ваша публикая <a href="%s">"%s"</a>', $this->plugin_name ), get_post_meta( $entry->ID, 'delete_date', true ), get_permalink( $entry->ID, false ), $entry->post_title ),
-							$headers = sprintf( 'From: %1$s <%2$s>%3$sContent-type: text/html%3$scharset=utf-8%3$s', $fields[ 'author' ], $fields[ 'email' ], "\r\n" ),
-							[]
-						);
+					if ( get_post_meta( $entry->ID, 'delete_date', true ) == $current_date ) {
+						$author_email = get_the_author_meta( 'user_email', $entry->post_author );
+						if ( ! empty( $author_email ) ) {
+							add_post_meta( $entry->ID, 'delete_notification', $author_email, true );
+							wp_mail(
+								$author_email,
+								$subject = sprintf( '%1$s %2$s', __( 'Сообщение с сайта', RESUME_TEXTDOMAIN ), get_bloginfo( 'name', 'raw' ) ),
+								sprintf( __( 'Оповещение! %s будет автоматически удалена Ваша публикая <a href="%s">"%s"</a>', $this->plugin_name ), get_post_meta( $entry->ID, 'delete_date', true ), get_permalink( $entry->ID, false ), $entry->post_title ),
+								$headers = sprintf( 'From: %1$s <%2$s>%3$sContent-type: text/html%3$scharset=utf-8%3$s', $fields[ 'author' ], $fields[ 'email' ], "\r\n" ),
+								[]
+							);
+						}
 					}
 				}
 			}
