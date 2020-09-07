@@ -119,6 +119,7 @@ class PartAdminUpdateTab extends Part {
 	 * @since    2.0.0
 	 */
 	protected function update_db() {
+		global $post;
 		$result = [
 			'done'    => true,
 			'message' => '',
@@ -147,6 +148,7 @@ class PartAdminUpdateTab extends Part {
 			] );
 			if ( is_array( $dissertations ) ) {
 				foreach ( $dissertations as $dissertation ) {
+					setup_postdata( $post = $dissertation );
 					// процесс обновления
 					$old_meta = get_post_meta( $dissertation->ID, '_pstu_metabox_dissertation', true );
 					if ( is_array( $old_meta ) ) {
@@ -162,8 +164,8 @@ class PartAdminUpdateTab extends Part {
 						}
 						add_post_meta( $dissertation->ID, 'opponents', PartPostTypeDessertation::sanitize_opponents( $old_meta[ 'opponents' ] ), true );
 						delete_post_meta( $dissertation->ID, $meta_key );
-						$delete_date = strtotime( $dissertation_settings[ 'deletion_interval' ], strtotime( get_post_meta( $dissertation->ID, 'publication', true ) ) );
-						add_post_meta( $dissertation->ID, 'delete_date', $delete_date, true );
+						$delete_date = date( 'Y-m-d', strtotime( $dissertation_settings[ 'deletion_interval' ], strtotime( get_the_date() ) ) );
+						update_post_meta( $dissertation->ID, 'delete_date', $delete_date, true );
 					}
 				}
 				$this->options[ 'updating_progress' ][ 'dissertation' ] += count( $dissertations );

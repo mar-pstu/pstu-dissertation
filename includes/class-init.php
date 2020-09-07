@@ -39,6 +39,8 @@ class Init extends Part {
 			'+2 month'  => __( '+2 месяца', $this->plugin_name ),
 			'+3 month'  => __( '+3 месяца', $this->plugin_name ),
 			'+4 month'  => __( '+4 месяца', $this->plugin_name ),
+			'+5 month'  => __( '+5 месяцев', $this->plugin_name ),
+			'+6 month'  => __( '+6 месяцев', $this->plugin_name ),
 		], ( is_array( $time_intervals ) ) ? $time_intervals : [] );
 	}
 

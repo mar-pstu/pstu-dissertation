@@ -143,9 +143,8 @@ class Manager {
 
 		$class_post_type_dissertation = new PartPostTypeDessertation( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'init', $class_post_type_dissertation, 'register_post_type', 10, 0 );
-		$this->loader->add_action( 'wp', $class_post_type_dissertation, 'registration_schedule_event', 10, 0 );
-		$this->loader->add_action( 'delete_old_' . $class_post_type_dissertation->get_part_name() . '-run', $class_post_type_dissertation, 'delete_old_posts_run', 10, 0 );
-		$this->loader->add_action( 'delete_old_' . $class_post_type_dissertation->get_part_name() . '-notification', $class_post_type_dissertation, 'delete_old_posts_notification', 10, 0 );
+		$this->loader->add_action( 'delete_old_' . $class_post_type_dissertation->get_post_type_name() . '-run', $class_post_type_dissertation, 'delete_old_posts_run', 10, 0 );
+		$this->loader->add_action( 'delete_old_' . $class_post_type_dissertation->get_post_type_name() . '-notification', $class_post_type_dissertation, 'delete_old_posts_notification', 10, 0 );
 		$this->loader->add_filter( 'default_post_metadata', $class_post_type_dissertation, 'default_meta', 10, 5 );
 
 		$class_taxonomy_science_counsil = new PartTaxonomyScienceCounsil( $this->get_plugin_name(), $this->get_version() );

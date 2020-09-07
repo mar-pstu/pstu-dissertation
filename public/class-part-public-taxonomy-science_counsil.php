@@ -56,16 +56,24 @@ class PartPublicTaxonomyScienceCounsil extends PartTaxonomyScienceCounsil {
 	}
 
 
-	public static function render_list_of_posts( $term_id, $plugin_name ) {
+	public function render_list_of_posts( $term_id, $plugin_name ) {
 		global $post;
 		$result = [];
 		$entries = get_posts( [
 			'numberposts' => -1,
-			'science_counsil' => $term_id,
 			'orderby'     => 'date',
 			'order'       => 'DESC',
 			'post_type'   => 'dissertation',
 			'suppress_filters' => true,
+			'tax_query'   => [
+				'relation'  => 'AND',
+				[
+					'taxonomy' => $this->taxonomy_name,
+					'field'    => 'term_id',
+					'terms'    => $term_id,
+					'operator' => 'IN',
+				],
+			],
 		] );
 		if ( is_array( $entries ) && ! empty( $entries ) ) {
 			foreach ( $entries as $entry ) {

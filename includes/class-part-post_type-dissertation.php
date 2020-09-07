@@ -67,12 +67,13 @@ class PartPostTypeDessertation extends PostType {
 				'menu_name'          => __( 'Диссертации', $this->plugin_name ),
 
 			],
-			'public'             => false,
+			'public'             => true,
 			'publicly_queryable' => true,
 			'show_ui'            => true,
 			'show_in_menu'       => true,
 			'query_var'          => true,
 			'rewrite'            => true,
+			'exclude_from_search' => false,
 			'capability_type'    => $this->post_type_name,
 			'capabilities'       => [
 				'edit_published_posts'=> "edit_published_{$this->post_type_name}",
@@ -83,33 +84,12 @@ class PartPostTypeDessertation extends PostType {
 				'read_post'           => "read_{$this->post_type_name}",
 				'read_private_posts'  => "read_private_{$this->post_type_name}",
 			],
-			'has_archive'        => false,
+			'has_archive'        => true,
 			'hierarchical'       => false,
 			'menu_icon'          => 'dashicons-book',
 			'menu_position'      => null,
 			'supports'           => [ 'title' ],
 		] );
-	}
-
-
-	/**
-	 * Планирование событий для типа поста "Диссертации"
-	 */
-	public function registration_schedule_event() {
-		if ( ! wp_next_scheduled( "delete_old_{$this->post_type_name}-run" ) ) {
-			if ( $this->settings[ 'auto_delete' ] ) {
-				wp_schedule_event( time(), 'daily', "delete_old_{$this->post_type_name}-run" );
-			} else {
-				wp_clear_scheduled_hook( "delete_old_{$this->post_type_name}-run" );
-			}
-		}
-		if ( ! wp_next_scheduled( "delete_old_{$this->post_type_name}-notification" ) ) {
-			if ( $this->settings[ 'auto_delete' ] ) {
-				wp_schedule_event( time(), 'daily', "delete_old_{$this->post_type_name}-notification" );
-			} else {
-				wp_clear_scheduled_hook( "delete_old_{$this->post_type_name}-notification" );
-			}
-		}
 	}
 
 
@@ -120,9 +100,10 @@ class PartPostTypeDessertation extends PostType {
 		if ( $this->settings[ 'auto_delete' ] ) {
 			$current_date = date( 'Y-m-d' );
 			$entries = get_posts( [
-				'post_type'  => $this->post_type_name,
-				'meta_query' => [
-					'relation' => 'AND',
+				'numberposts' => -1,
+				'post_type'   => $this->post_type_name,
+				'meta_query'  => [
+					'relation'  => 'OR',
 					[
 						'key'     => 'delete_date',
 						'value'   => date( 'Y-m-d' ),
@@ -137,7 +118,7 @@ class PartPostTypeDessertation extends PostType {
 			] );
 			if ( is_array( $entries ) && ! empty( $entries ) ) {
 				foreach ( $entries as $entry ) {
-					if ( get_post_meta( $entry->ID, 'delete_date', true ) == $current_date ) {
+					if ( get_post_meta( $entry->ID, 'delete_date', true ) <= $current_date ) {
 						wp_delete_post( $entry->ID, false );
 					}
 				}
@@ -152,18 +133,22 @@ class PartPostTypeDessertation extends PostType {
 	public function delete_old_posts_notification() {
 		if ( $this->settings[ 'auto_delete' ] ) {
 			$entries = get_posts( [
-				'post_type'  => $this->post_type_name,
-				'meta_query' => [
-					'relation' => 'AND',
+				'numberposts' => -1,
+				'post_type'   => $this->post_type_name,
+				'meta_query'  => [
+					'relation'  => 'AND',
 					[
-						'key'     => 'delete_date',
-						'value'   => date( 'Y-m-d', strtotime( '+2 day' ) ),
-						'compare' => '<=',
-						'type'    => 'DATE',
-					],
-					[
-						'key'     => 'delete_date',
-						'compare' => 'NOT EXISTS',
+						'relation' => 'OR',
+						[
+							'key'     => 'delete_date',
+							'value'   => date( 'Y-m-d', strtotime( '+2 day' ) ),
+							'compare' => '<=',
+							'type'    => 'DATE',
+						],
+						[
+							'key'     => 'delete_date',
+							'compare' => 'NOT EXISTS',
+						],
 					],
 					[
 						'key'     => 'delete_notification',
@@ -173,15 +158,16 @@ class PartPostTypeDessertation extends PostType {
 			] );
 			if ( is_array( $entries ) && ! empty( $entries ) ) {
 				foreach ( $entries as $entry ) {
-					if ( get_post_meta( $entry->ID, 'delete_date', true ) == $current_date ) {
+					$delete_date = get_post_meta( $entry->ID, 'delete_date', true );
+					if ( $delete_date <= $current_date ) {
 						$author_email = get_the_author_meta( 'user_email', $entry->post_author );
 						if ( ! empty( $author_email ) ) {
 							add_post_meta( $entry->ID, 'delete_notification', $author_email, true );
 							wp_mail(
 								$author_email,
-								$subject = sprintf( '%1$s %2$s', __( 'Сообщение с сайта', RESUME_TEXTDOMAIN ), get_bloginfo( 'name', 'raw' ) ),
-								sprintf( __( 'Оповещение! %s будет автоматически удалена Ваша публикая <a href="%s">"%s"</a>', $this->plugin_name ), get_post_meta( $entry->ID, 'delete_date', true ), get_permalink( $entry->ID, false ), $entry->post_title ),
-								$headers = sprintf( 'From: %1$s <%2$s>%3$sContent-type: text/html%3$scharset=utf-8%3$s', $fields[ 'author' ], $fields[ 'email' ], "\r\n" ),
+								sprintf( '%1$s %2$s', __( 'Сообщение с сайта', RESUME_TEXTDOMAIN ), get_bloginfo( 'name', 'raw' ) ),
+								sprintf( __( 'Оповещение! %s будет автоматически удалена Ваша публикая <a href="%s">"%s"</a>', $this->plugin_name ), $delete_date, get_permalink( $entry->ID, false ), $entry->post_title ),
+								sprintf( 'From: %1$s <%2$s>%3$sContent-type: text/html%3$scharset=utf-8%3$s', get_bloginfo( 'name', 'raw' ), get_bloginfo( 'admin_email', 'raw' ), "\r\n" ),
 								[]
 							);
 						}

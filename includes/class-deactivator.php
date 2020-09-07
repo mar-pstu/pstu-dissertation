@@ -33,6 +33,8 @@ class Deactivator {
 	 */
 	public static function deactivate() {
 		remove_role( 'science_counsil_editor' );
+		wp_clear_scheduled_hook( 'delete_old_dissertation-run' );
+		wp_clear_scheduled_hook( 'delete_old_dissertation-notification' );
 	}
 
 }
