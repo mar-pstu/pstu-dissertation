@@ -47,8 +47,8 @@ class Activator {
 		] );
 		wp_clear_scheduled_hook( 'delete_old_dissertation-run' );
 		wp_clear_scheduled_hook( 'delete_old_dissertation-notification' );
-		wp_schedule_event( time(), 'hourly', 'delete_old_dissertation-run');
-		wp_schedule_event( time(), 'hourly', 'delete_old_dissertation-notification');
+		wp_schedule_event( time(), 'daily', 'delete_old_dissertation-run');
+		wp_schedule_event( time(), 'daily', 'delete_old_dissertation-notification');
 	}
 
 
