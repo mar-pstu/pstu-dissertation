@@ -450,9 +450,9 @@ EOF;
 	 */
 	public function add_custom_columns( $columns ) {
 		return array_slice( $columns, 0, 2 ) + [
-			'author_full_name' => __( 'Дата публикации на сайте', $this->plugin_name ),
+			'author_full_name' => __( 'Автор работы', $this->plugin_name ),
 			'opponents_list'   => __( 'Оппоненты', $this->plugin_name ),
-			'publication'      => __( 'Публикация на сайте', $this->plugin_name ),
+			'publication_date' => __( 'Публикация на сайте', $this->plugin_name ),
 			'delete_date'      => __( 'Удаления с сайта', $this->plugin_name ),
 			'protection'       => __( 'Защита', $this->plugin_name ),
 		] + array_slice( $columns, 2 );
@@ -478,7 +478,7 @@ EOF;
 					}, $opponents ) );
 				}
 				break;
-			case 'publication':
+			case 'publication_date':
 				echo get_post_meta( $post_id, $column_name, true );
 				break;
 			case 'delete_date':

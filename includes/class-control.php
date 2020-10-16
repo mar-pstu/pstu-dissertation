@@ -97,7 +97,7 @@ class Control {
 		wp_enqueue_script( 'jquery-ui-datepicker' ); 
 		wp_enqueue_style( 'jquery-ui', plugin_dir_url( dirname( __FILE__ ) ) . 'admin/styles/jquery-ui.css', [], '1.11.4', 'all' );
 		wp_enqueue_media();
-		wp_enqueue_script( "{$this->plugin_name}-control", plugin_dir_url( dirname( __FILE__ ) ) . 'admin/scripts/admin-control.js',  [ 'jquery', 'wp-color-picker' ], $this->version, false );
+		wp_enqueue_script( 'chomovva-admin-control', plugin_dir_url( dirname( __FILE__ ) ) . 'admin/scripts/admin-control.js',  [ 'jquery', 'wp-color-picker' ], $this->version, false );
 	}
 
 
